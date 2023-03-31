@@ -1,0 +1,146 @@
+---
+title: "STAT 345 Midterm Project"
+font: 12pt
+date: "Due March 31"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r}
+library(devtools)
+devtools::install_github("abresler/nbastatR", force = TRUE)
+tinytex::install_tinytex(force = TRUE)
+```
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(devtools)
+install_github("abresler/nbastatR")
+library(nbastatR)
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#The following code is how the court is made.
+court <- ggplot(data=data.frame(x=1,y=1),aes(x*10,y*10))+
+   ###outside box:
+geom_path(data=data.frame(x=c(-27,-27,27,27,-27),y=c(-4,50,50,-4,-4)))+
+   ###key:
+geom_path(data=data.frame(x=c(-8,-8,8,8,-8),y=c(-4,14,14,-4,-4)))+
+   ###box inside the key:
+geom_path(data=data.frame(x=c(-6,-6,6,6,-6),y=c(-4,14,14,-4,-4)))+
+   ###restricted area semicircle:
+geom_path(data=data.frame(x=c(-4000:(-1)/1000,1:4000/1000),y=c(0+sqrt(4^2-c(-4000:(-1)/1000,1:4000/1000)^2))),aes(x=x*10,y=y*11))+
+   ###halfcourt semicircle:
+geom_path(data=data.frame(x=c(-6000:(-1)/1000,1:6000/1000),y=c(50-sqrt(6^2-c(-6000:(-1)/1000,1:6000/1000)^2))),aes(x=x*10,y=y*10))+
+   ###rim:
+geom_path(data=data.frame(x=c(-750:(-1)/1000,1:750/1000,750:1/1000,-1:-750/1000),y=c(c(-3+sqrt(0.75^2-c(-750:(-1)/1000,1:750/1000)^2)),c(-3-sqrt(0.75^2-c(750:1/1000,-1:-750/1000)^2)))),aes(x=x*10,y=y*10))+
+   ###backboard:
+geom_path(data=data.frame(x=c(-3,3),y=c(-4,-4)),lineend='butt')+
+   ###three-point line:
+geom_path(data=data.frame(x=c(-22,-22,-22000:(-1)/1000,1:22000/1000,22,22),y=c(-5,169/12,5.25+sqrt(23.75^2-c(-22000:(-1)/1000,1:22000/1000)^2),169/12,-5)),aes(x=x*10,y=y*8))+
+   ###fix aspect ratio to 1:1
+coord_fixed()
+```
+  
+```{r}
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 10000)
+team_2010 <- teams_shots (teams= "Chicago Bulls", seasons =2010)
+team_2012 <- teams_shots (teams= "Chicago Bulls", seasons =2012)
+team_2014 <- teams_shots (teams= "Chicago Bulls", seasons =2014)
+team_2016 <- teams_shots (teams= "Chicago Bulls", seasons =2016)
+team_2018 <- teams_shots (teams= "Chicago Bulls", seasons =2018)
+team_2020 <- teams_shots (teams= "Chicago Bulls", seasons =2020)
+shots3 <- rbind(team_2010,team_2012,team_2014,team_2016,team_2018,team_2020)
+court + geom_point(data=shots3, aes(x=locationX,y=locationY, color=zoneRange, shape = typeEvent),alpha=0.99)+ labs(x="",y="", shape= "Type Event", color = "Zone Range" ) + facet_wrap(~yearSeason) +
+  scale_color_brewer(palette = "RdGy")# + theme_null() 
+```
+Report:
+
+Six minature graphics of the shots made and missed
+
+-The court graphic looks at the team shots of the Chicago Bulls from six seasons: 2010, 2012, 2014, 2016, 2018, and 2020.
+
+-The shots made is identified by a circle and the shots missed is identified by a triangle. 
+
+-From where on the court the player made the shot is represented by RdGy theme coloring. The different zone ranges and colors are identified in the legend made for the courts graphic. 
+
+-As the years go on, it appears that the players are shooting closer toward the hoop. The light red region on each graphic (the more than 24 feet), appears to get more dense as the years proceed.
+
+-The missed shots seem to get closer to the hoop as the years go on.
+
+The first court graphic looks at six different seasons of the Chicago Bulls team shots. The seasons used in this graphic are 2010, 2012, 2014, 2016, 2018, and 2020.By creating this graphic, it shows team shots and if they changed throughout the years for any trends. Overall, looking for changes in distance regarding players shooting throughout the years and how that impacted made and missed shots.From the court graphic, it appears that the players are shooting closer as the seasons go on. The more than 24 feet gets more dense as the years go on. The amount of back court shots steadily increases then approaches a decrease again as the years go on.
+
+```{r, warning=FALSE}
+#Plots of one season of the Chicago Bulls
+# Chicago Bulls #red 
+# Chicago Bulls is #black
+first_graph <- ggplot(data=team_2014, aes(x = locationX, y=locationY - 400)) + # the points were brought down to be viewable
+  geom_point(alpha = 0.2, aes(color = team_2014$typeEvent)) +  # changing opacity and color
+  scale_color_manual(values = c("red","black")) + # setting colors to Chicago Bulls
+  labs(x = "", y = "", color = "Type of Shot") +
+  xlim(-300,300) + 
+  ylim(-450,0) + 
+  ggtitle("Chicago Bulls In 2014")
+first_graph
+```
+Report:
+
+Huge graph of one of the years of made and missed shots
+
+-The Graph shows Chicago Bulls made and missed shots in the year 2020.
+
+-Made shots are the red points.
+
+-Missed shots are the black points.
+
+-The greater density areas of red and black depicts locations where the number of shots taken were more heavy.
+
+-The three point line and in front of the hoop seems to have the highest density of made and missed shots.
+
+-The graph is not too significant in showing where the highest amount of made and missed shots are.
+
+```{r loaddata}
+df <- data.frame(read.csv('~/Downloads/shot_logs.csv'))
+str(df)
+summary(df)
+```
+
+```{r bargraphs}
+histogram <- hist(df$SHOT_DIST, plot=FALSE)
+shot_counts <- histogram$counts
+made_shots <- subset(df, FGM == 1)
+made_hist <- hist(made_shots$SHOT_DIST, plot=FALSE)
+made_counts <- made_hist$counts
+breaks <- made_hist$breaks
+distance_breaks <- head(breaks, length(breaks) - 1)
+percs <- made_counts / shot_counts
+barplot(shot_counts, names.arg=distance_breaks, main="Shot Frequency Using Distance", col="Black", xlab = "Shot Distance In Feet", ylab = "Shot Count")
+```
+
+Report:
+
+Shot Frequency Using Distance Histogram
+
+-The NBA has record of shot logs containing every shot taken in 2014-2015 regular season, which was downloaded through Kaggle
+  -Source URL:https://www.kaggle.com/datasets/dansbecker/nba-shot-logs
+  
+-The data set contained an array of 21 variables, however, the graphs only pull data from shot distance and shot counts.
+
+-The first barplot shows shot distance in feet on the x-axis and number of shots made from those area on the y-axis.
+
+-The most shots were taken at 2 feet and 24 feet away. The 24 feet is expected because the average 3 point line is 22 feet and that is close to there.
+
+-After the 24 feet there is a huge drop in distance regarding shots being thrown from there. 
+
+This graphic is showing the shot distance in feet and amount of time players shot from those locations. It does not correlate with the top graphs, but it is significant because the big graph I created for Chicago Bulls 2014 data is included within this one. Those players, alongside many other teams who competed in the NBA can be looked at to see what there shot counts look like depending on distance when they play. 
+
+
+
+
+
